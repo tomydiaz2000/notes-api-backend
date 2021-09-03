@@ -1,0 +1,14 @@
+POST http://localhost:3001/api/qrcode
+content-type: application/json
+
+{
+    "code": "23132132321321sdsadadadsa"
+}
+
+###
+
+POST http://localhost:3001/api/notes
+content-type: application/json
+
+{
+}

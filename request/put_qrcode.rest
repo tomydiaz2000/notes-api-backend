@@ -1,0 +1,6 @@
+PUT http://localhost:3001/api/qrcode/6131491b6bd7209b421fc9e4
+content-type: application/json
+
+{
+    "code": "codigo"
+}

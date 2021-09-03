@@ -1,0 +1,3 @@
+GET http://localhost:3001/api/qrcode
+###
+GET http://localhost:3001/api/qrcode/613122ea6ca32ca9e8d069d

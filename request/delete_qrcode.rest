@@ -1,0 +1,1 @@
+DELETE  http://localhost:3001/api/qrcode/61312397acf3ffbbec8e1adc

@@ -1,7 +1,30 @@
 const express = require('express')
 const cors = require('cors')
+const multer = require('multer')
+const fs = require('fs');
+const path = require('path');
 
 const app = express()
+
+require('dotenv').config()
+require('./mongo')
+
+const Note = require('./models/Note')
+const QrCode = require('./models/QrCode')
+const Image = require('./models/Image')
+
+const { request } = require('express')
+
+var storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads')
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + '-' + Date.now())
+  }
+});
+
+var upload = multer({ dest: 'uploads' });
 
 app.use(cors())
 app.use(express.json())
@@ -13,17 +36,16 @@ app.use((request, response, next) => {
   next()
 })
 
-let notes = [
-  {
-    id: 1,
-    content: 'Buenas tardes',
-    date: '2019-05-30T17:30:31.098Z',
-    important: true
-  }
-]
+let notes = []
 
-app.get('/', (request, response) => { response.send('<h1>Hello world</h1>') })
-app.get('/api/notes', (request, response) => { response.json(notes) })
+app.get('/', (request, response) => { response.sendFile(__dirname + '/views/index.html') })
+
+app.get('/api/notes', (request, response) => {
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
+})
+
 app.get('/api/notes/:id', (request, response) => {
   const id = Number(request.params.id)
   const note = notes.find(note => note.id === id)
@@ -35,10 +57,107 @@ app.get('/api/notes/:id', (request, response) => {
   }
 })
 
+app.get('/api/images', (request, response) => {
+  Image.find({}).then(result => {
+    response.json(result)
+  })
+})
+
+app.post('/api/images', upload.single('avatar') ,(request, response, next) => {
+  console.log('in images')
+  console.log(request.file.filename)
+  var obj = {
+    name: request.body.name,
+    desc: request.body.desc,
+    img: {
+      data: fs.readFileSync(path.join(__dirname + '/uploads/' + request.file.filename)),
+      contentType: 'image/png'
+    }
+  }
+  Image.create(obj, (err, item) => {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      Image.save();
+      //response.redirect('/');
+    }
+  });
+})
+
 app.delete('/api/notes/:id', (request, response) => {
   const id = Number(request.params.id)
   notes = notes.filter(note => note.id !== id)
   response.status(204).end()
+})
+
+app.get('/api/qrcode', (request, response) => {
+  QrCode.find({}).then(qrCodes => {
+    response.json(qrCodes)
+  })
+})
+
+app.put('/api/qrcode/:id', (request, response) => {
+  console.log('PUT HERE')
+  const { id } = request.params
+
+  const qrcode = request.body
+
+  const newQrCodeInfo = {
+    code: qrcode.code
+  }
+
+  QrCode.findByIdAndUpdate(id, newQrCodeInfo, { new: true })
+    .then(result => {
+      console.log('result ' + result)
+      response.json(result)
+    })
+    .catch(err => {
+      console.log(err)
+    })
+})
+
+app.get('/api/qrcode/:id', (request, response, next) => {
+  const { id } = request.params
+
+  QrCode.findById(id).then(dataResponse => {
+    if (dataResponse) {
+      response.json(dataResponse)
+    } else {
+      response.status(404).end()
+    }
+  }).catch(err => {
+    next(err)
+  })
+})
+
+app.delete('/api/qrcode/:id', (request, response, next) => {
+  const { id } = request.params
+
+  QrCode.findByIdAndRemove(id).then(dataResponse => {
+    response.status(204).end()
+  }).catch(err => {
+    next(err)
+  })
+})
+
+app.post('/api/qrcode', (request, response) => {
+  const qrcode = request.body
+
+  if (!qrcode.code) {
+    return response.status(400).json({
+      error: 'requere1 "content" field is missing'
+    })
+  }
+
+  const newQrCode = new QrCode({
+    code: qrcode.code,
+    date: new Date().toISOString()
+  })
+
+  newQrCode.save().then(savedQrCode => {
+    response.json(savedQrCode)
+  })
 })
 
 app.post('/api/notes', (request, response) => {
@@ -71,7 +190,20 @@ app.use((request, response) => {
   })
 })
 
+app.use((error, request, response, next) => {
+  console.error(error)
+
+  if (error.name === 'CastError') {
+    response.status(400).send({
+      error: 'id used is malformed'
+    })
+  } else {
+    response.status(500).end()
+  }
+})
+
 const PORT = process.env.PORT || 3001
+
 app.listen(PORT, () => {
   console.log('Server running on port ' + PORT)
 })
