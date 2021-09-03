@@ -146,7 +146,7 @@ app.post('/api/qrcode', (request, response) => {
 
   if (!qrcode.code) {
     return response.status(400).json({
-      error: 'requere1 "content" field is missing'
+      error: 'require "content" field is missing'
     })
   }
 
