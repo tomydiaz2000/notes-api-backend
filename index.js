@@ -64,25 +64,29 @@ app.get('/api/images', (request, response) => {
 })
 
 app.post('/api/images', upload.single('avatar') ,(request, response, next) => {
-  console.log('in images')
   console.log(request.file.filename)
-  var obj = {
+  var obj = new Image ({
     name: request.body.name,
     desc: request.body.desc,
     img: {
       data: fs.readFileSync(path.join(__dirname + '/uploads/' + request.file.filename)),
       contentType: 'image/png'
     }
-  }
-  Image.create(obj, (err, item) => {
-    if (err) {
-      console.log(err);
-    }
-    else {
-      Image.save();
-      //response.redirect('/');
-    }
-  });
+  })
+  obj.save().then(savedImage => {
+    response.json(savedImage)
+  })
+  
+  // Image.create(obj, (err, item) => {
+  //   if (err) {
+  //     console.log(err);
+  //   }
+  //   else {
+  //     Image.save().then(savedImage => {
+  //       response.json(savedImage)
+  //     })
+  //   }
+  // });
 })
 
 app.delete('/api/notes/:id', (request, response) => {
