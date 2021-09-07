@@ -15,16 +15,9 @@ const Image = require('./models/Image')
 
 const { request } = require('express')
 
-var storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads')
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now())
-  }
-});
-
-var upload = multer({ dest: 'uploads' });
+const upload = multer({
+  dest: 'uploads'
+})
 
 app.use(cors())
 app.use(express.json())
@@ -63,8 +56,7 @@ app.get('/api/images', (request, response) => {
   })
 })
 
-app.post('/api/images', upload.single('avatar') ,(request, response, next) => {
-  console.log(request.file.filename)
+app.post('/api/images', upload.single('avatar'), (request, response, next) => {
   var obj = new Image ({
     name: request.body.name,
     desc: request.body.desc,
@@ -74,7 +66,8 @@ app.post('/api/images', upload.single('avatar') ,(request, response, next) => {
     }
   })
   obj.save().then(savedImage => {
-    response.json(savedImage)
+    // console.log(savedImage)
+    response.status(200).end()
   })
   
   // Image.create(obj, (err, item) => {
